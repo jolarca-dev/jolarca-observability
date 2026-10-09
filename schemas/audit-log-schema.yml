@@ -1,0 +1,145 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Audit Log Schema — Mandatory Fields
+# ──────────────────────────────────────────────────────────────────────────────
+# Every audit-log entry across ALL domains must contain these fields.
+# Domain-specific schemas extend this base with additional mandatory fields.
+#
+# Compliance: PCI-DSS Req. 10.2, SOC 2 CC7.1/CC8.1, ISO 27001 A.5.25
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+schema_id: "audit-log-base"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001", "gdpr"]
+
+# ── MANDATORY FIELDS ──────────────────────────────────────────────────────────
+# An entry missing ANY of these fields FAILS validation and must be rejected
+# by the log collector (not stored with incomplete data).
+
+mandatory_fields:
+  timestamp:
+    type: "string"
+    format: "ISO 8601 UTC"
+    example: "2026-09-26T14:30:00.000Z"
+    pci_requirement: "10.2 — when the event occurred"
+    nullable: false
+
+  event_id:
+    type: "string"
+    format: "UUID v4"
+    example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    description: "Unique identifier for this event"
+    nullable: false
+
+  event_type:
+    type: "string"
+    enum:
+      - "chd_access"
+      - "admin_action"
+      - "audit_log_access"
+      - "auth_failure"
+      - "auth_config_change"
+      - "audit_lifecycle"
+      - "system_object_change"
+      - "payment_initiated"
+      - "payment_authorized"
+      - "payment_settled"
+      - "refund_initiated"
+      - "chargeback_received"
+      - "payment_config_change"
+      - "identity_document_submitted"
+      - "identity_verification_result"
+      - "aml_screening_performed"
+      - "sanctions_match_detected"
+      - "suspicious_activity_reported"
+      - "kyc_decision_override"
+      - "identity_data_access"
+      - "invalid_access_attempt"
+      - "application_error"
+      - "security_violation"
+      - "ssh_login"
+      - "ssh_logout"
+      - "service_account_auth"
+      - "network_deny"
+      - "container_exec"
+    pci_requirement: "10.2 — what type of event occurred"
+    nullable: false
+
+  actor_id:
+    type: "string"
+    description: "Unique identifier of the actor (user, service account, system)"
+    example: "user:jol-12345"
+    pci_requirement: "10.2 — who performed the action (linked to unique user)"
+    nullable: false
+
+  actor_type:
+    type: "string"
+    enum: ["user", "service_account", "system", "admin"]
+    description: "Type of actor"
+    nullable: false
+
+  source_ip:
+    type: "string"
+    format: "IPv4 or IPv6"
+    example: "203.0.113.42"
+    pci_requirement: "10.2 — origin of the action"
+    nullable: false
+
+  domain:
+    type: "string"
+    enum: ["audit", "payment", "kyc_aml", "application", "system"]
+    description: "Log domain this entry belongs to"
+    nullable: false
+
+  severity:
+    type: "string"
+    enum: ["info", "warn", "error", "critical"]
+    description: "Event severity level"
+    nullable: false
+
+  description:
+    type: "string"
+    description: "Human-readable description of the event"
+    max_length: 1000
+    nullable: false
+
+  hash_chain:
+    type: "string"
+    format: "SHA-256 hex digest (64 characters)"
+    description: "Hash-chain integrity field — computed by the collector"
+    pci_requirement: "10.5.5 — log integrity"
+    nullable: false
+    computed: true
+    note: "Not emitted by the application; appended by the log collector"
+
+# ── OPTIONAL FIELDS ───────────────────────────────────────────────────────────
+optional_fields:
+  target_resource:
+    type: "string"
+    description: "The resource that was accessed or modified"
+
+  action:
+    type: "string"
+    enum: ["create", "read", "update", "delete", "execute", "login", "logout"]
+    description: "The action performed"
+
+  result:
+    type: "string"
+    enum: ["success", "failure", "denied", "error"]
+    description: "Outcome of the action"
+
+  data_categories:
+    type: "array"
+    items: "string"
+    description: "Categories of data involved (e.g., 'chd', 'pii', 'kyc')"
+
+  session_id:
+    type: "string"
+    description: "Session identifier (must not be usable to reconstruct the session)"
+
+  correlation_id:
+    type: "string"
+    description: "Correlation ID for tracing related events across systems"
+
+  metadata:
+    type: "object"
+    description: "Domain-specific additional fields"

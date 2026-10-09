@@ -1,0 +1,66 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Application Log Configuration
+# ──────────────────────────────────────────────────────────────────────────────
+# Covers: application-level events, errors, exceptions, invalid access attempts,
+# and security-relevant application behavior.
+#
+# Compliance: PCI-DSS 10.2.4, SOC 2 CC7.1, ISO 27001 A.5.25
+# ──────────────────────────────────────────────────────────────────────────────
+
+domain: application
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+log_sources:
+  - name: app-runtime
+    description: "Application runtime events (startup, shutdown, health checks)"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: medium
+
+  - name: app-errors
+    description: "Application errors, exceptions, and stack traces"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: high
+
+  - name: app-security
+    description: "Security-relevant application events (CSRF, XSS, injection attempts)"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: critical
+
+mandatory_events:
+  - event_type: "invalid_access_attempt"
+    description: "Attempts to access resources without authorization"
+    pci_requirement: "10.2.4"
+    fields_required: ["source_ip", "target_resource", "auth_method", "failure_reason"]
+
+  - event_type: "application_error"
+    description: "Unhandled exceptions and application errors"
+    fields_required: ["error_code", "component", "stack_trace_hash"]
+
+  - event_type: "security_violation"
+    description: "Security policy violations detected by the application"
+    fields_required: ["violation_type", "source_ip", "target_resource", "action_taken"]
+
+redaction:
+  # Application logs must not contain secrets, tokens, or PII
+  request_body: "strip_sensitive_fields"
+  response_body: "strip_sensitive_fields"
+  stack_traces: "include_but_redact_pii"
+  session_tokens: "never_log"
+  api_keys: "never_log"
+
+retention:
+  min_months: 12
+  hot_months: 3
+  warm_months: 9
+
+integrity:
+  hash_chain: true
+  algorithm: "SHA-256"
+  verify_daily: true

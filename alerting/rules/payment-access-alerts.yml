@@ -1,0 +1,73 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Payment Access Alerting Rules
+# ──────────────────────────────────────────────────────────────────────────────
+# Detects unusual access patterns to payment processing systems and
+# cardholder data.
+#
+# Compliance: PCI-DSS Req. 10.2.1, 10.2.4, SOC 2 CC7.1
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+rules:
+  - id: "PAYMENT_ADMIN_OFF_HOURS"
+    name: "Payment admin access outside business hours"
+    severity: high
+    description: >
+      Administrative access to payment configuration or cardholder data
+      outside defined business hours (06:00–22:00 UTC). May indicate
+      compromised credentials or insider threat.
+    condition: "payment_admin_access AND time NOT IN 06:00-22:00 UTC"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Verify the actor's identity and authorization"
+      - "Check for correlated auth failures"
+
+  - id: "PAYMENT_ADMIN_NEW_IP"
+    name: "Payment admin access from new IP address"
+    severity: high
+    description: >
+      Administrative access to payment systems from an IP address not
+      seen in the last 90 days.
+    condition: "payment_admin_access AND source_ip NOT IN known_ips_90d"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Verify the actor's identity"
+      - "Check if IP belongs to known VPN/proxy"
+
+  - id: "CHD_ACCESS_BULK"
+    name: "Bulk cardholder data access"
+    severity: critical
+    description: >
+      A single actor accesses cardholder data for more than 50 transactions
+      in a 10-minute window. May indicate data exfiltration.
+    condition: "chd_access_count_per_actor > 50 IN 600s"
+    action:
+      - "Page organization owner immediately"
+      - "Consider temporarily suspending the actor's access"
+      - "Initiate forensic investigation"
+
+  - id: "PAYMENT_CONFIG_CHANGE"
+    name: "Payment configuration change"
+    severity: high
+    description: >
+      Any change to payment processing configuration (merchant accounts,
+      API keys, webhook endpoints, settlement parameters).
+    condition: "event_type == payment_config_change"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Verify the change was authorized"
+      - "Record in change management log"
+
+  - id: "AUTH_FAILURE_THRESHOLD"
+    name: "Authentication failure threshold exceeded"
+    severity: medium
+    description: >
+      More than 5 authentication failures for payment systems from the
+      same source within 15 minutes.
+    condition: "auth_failure_count_per_source > 5 IN 900s AND target == payment_system"
+    action:
+      - "Notify within 4 hours"
+      - "Consider temporary IP block"
+      - "Check for credential stuffing pattern"

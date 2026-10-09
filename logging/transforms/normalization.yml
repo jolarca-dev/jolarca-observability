@@ -1,0 +1,40 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Log Normalization Transforms
+# ──────────────────────────────────────────────────────────────────────────────
+# Ensures all log entries conform to a unified schema before storage.
+# Applied after redaction, before hash-chain computation.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+
+normalization_rules:
+  - id: "TIMESTAMP_UTC"
+    description: "All timestamps normalized to UTC ISO 8601"
+    target_field: "timestamp"
+    format: "ISO8601"
+    timezone: "UTC"
+    note: "ISO 27001 A.5.25 — clock synchronisation requires consistent timestamps"
+
+  - id: "EVENT_TYPE_ENUM"
+    description: "Event types must be from the controlled vocabulary"
+    target_field: "event_type"
+    vocabulary_source: "../schemas/audit-log-schema.yml#event_type"
+
+  - id: "ACTOR_ID_CANONICAL"
+    description: "Actor IDs normalized to lowercase, trimmed"
+    target_field: "actor_id"
+    transforms: ["lowercase", "trim"]
+
+  - id: "SOURCE_IP_VALIDATE"
+    description: "Source IP addresses validated (IPv4 or IPv6)"
+    target_field: "source_ip"
+    validation: "ip_address"
+
+  - id: "LOG_LEVEL_ENUM"
+    description: "Log levels normalized to standard vocabulary"
+    target_field: "log_level"
+    vocabulary: ["debug", "info", "warn", "error", "critical"]
+
+  - id: "STRIP_NULL_FIELDS"
+    description: "Remove fields with null/empty values to reduce storage"
+    scope: "all_optional_fields"

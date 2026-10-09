@@ -1,0 +1,80 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Escalation Policy
+# ──────────────────────────────────────────────────────────────────────────────
+# Defines severity levels, response times, and escalation paths for all
+# observability alerts.
+#
+# Compliance: PCI-DSS Req. 10.6, SOC 2 CC7.2/CC7.3, ISO 27001 A.5.25
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+severity_levels:
+  critical:
+    response_time: "immediate"
+    escalation_after: "15 minutes"
+    escalate_to: "organization owner"
+    notification_channels: ["pager", "email", "slack"]
+    description: "Active security incident or compliance control failure"
+    examples:
+      - "Audit log gap > 5 minutes (potential log tampering)"
+      - "Hash-chain integrity break (log modification detected)"
+      - "Audit logging system offline"
+
+  high:
+    response_time: "1 hour"
+    escalation_after: "4 hours"
+    escalate_to: "organization owner"
+    notification_channels: ["email", "slack"]
+    description: "Security event requiring investigation"
+    examples:
+      - "Unusual payment admin access pattern"
+      - "Retention policy violation (log deleted before expiry)"
+      - "Multiple auth failures from single source"
+
+  medium:
+    response_time: "4 hours"
+    escalation_after: "1 business day"
+    escalate_to: "next business day review"
+    notification_channels: ["email"]
+    description: "Security event requiring attention but not urgent"
+    examples:
+      - "Elevated auth failure rate"
+      - "New service account created"
+      - "Configuration change to payment system"
+
+  low:
+    response_time: "24 hours"
+    escalation_after: "weekly review"
+    escalate_to: "weekly security review"
+    notification_channels: ["slack"]
+    description: "Informational security event"
+    examples:
+      - "Successful admin login from new IP"
+      - "Scheduled audit log rotation completed"
+      - "Certificate approaching expiry"
+
+# ── ESCALATION PROCEDURE ──────────────────────────────────────────────────────
+escalation_procedure:
+  step_1: "Alert fires — notification sent per severity level"
+  step_2: "Acknowledgement expected within response time"
+  step_3: "If unacknowledged, escalate to next level"
+  step_4: "CRITICAL alerts not acknowledged in 15 min → direct owner contact"
+  step_5: "All CRITICAL and HIGH alerts logged as security events"
+  step_6: "Post-incident: root cause analysis within 48 hours"
+
+# ── SILENCE POLICY ────────────────────────────────────────────────────────────
+# Alert silencing is a compliance risk — a silenced alert is an undetected
+# incident. All silencing must be:
+# 1. Time-bounded (max 4 hours for CRITICAL, 24 hours for others)
+# 2. Approved by the organization owner
+# 3. Recorded in the audit log with reason and approver
+silence_policy:
+  max_silence_duration:
+    critical: "4 hours"
+    high: "24 hours"
+    medium: "7 days"
+    low: "30 days"
+  requires_owner_approval: ["critical", "high"]
+  silence_must_be_logged: true

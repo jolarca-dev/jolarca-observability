@@ -1,0 +1,41 @@
+Copyright (c) 2026 jolarca-dev. All Rights Reserved.
+
+PROPRIETARY AND CONFIDENTIAL
+
+This repository and all code, configurations, schemas, alerting rules, runbooks,
+documentation and other materials contained within it (collectively, the
+"Materials") are the proprietary and confidential property of the jolarca-dev
+organization (the "Owner").
+
+NOTICE: All information contained herein is, and remains, the property of the
+Owner. The Materials are protected by applicable copyright, trade-secret and
+other intellectual-property laws. No licence, whether express or implied, to any
+intellectual-property right is granted by this document or by mere possession of
+the Materials, except under a separate written agreement executed by the Owner.
+
+RESTRICTIONS. Without limiting the foregoing, you may not, without the prior
+written consent of the Owner:
+
+  1. copy, reproduce, or redistribute the Materials, in whole or in part;
+  2. modify, adapt, translate, or create derivative works of the Materials;
+  3. decompile, disassemble, or reverse-engineer the Materials;
+  4. disclose, publish, or transfer the Materials to any third party; or
+  5. use the Materials for any purpose other than the internal business purposes
+     of the Owner.
+
+COMPLIANCE. The Materials support the Owner's obligations under PCI-DSS 4.0,
+SOC 2 Type II, ISO/IEC 27001:2022 and Regulation (EU) 2016/679 (GDPR).
+Unauthorised access, use or disclosure may violate those obligations and
+applicable law, and is reportable under SECURITY.md.
+
+NO WARRANTY. THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE OWNER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+
+Unauthorised copying, distribution or use of the Materials, via any medium, is
+strictly prohibited and may result in severe civil and criminal penalties.
+
+Licensing enquiries: legal@jolarca.dev

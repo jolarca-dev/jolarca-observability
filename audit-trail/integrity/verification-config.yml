@@ -1,0 +1,40 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Integrity Verification Configuration
+# ──────────────────────────────────────────────────────────────────────────────
+# Configuration for scripts/verify_integrity.py — defines what to verify,
+# how often, and what to do on failure.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+
+verification:
+  # ── Schedule ─────────────────────────────────────────────────────────────
+  schedule:
+    full_verification: "daily at 03:00 UTC"
+    incremental_verification: "hourly (last 1000 entries)"
+    note: >
+      Full verification recomputes every hash in the chain. Incremental
+      verification checks only the most recent entries for faster feedback.
+
+  # ── Scope ────────────────────────────────────────────────────────────────
+  scope:
+    domains: ["audit", "payment", "kyc_aml", "application", "system"]
+    storage_tiers: ["hot", "warm"]
+    note: "Cold storage is verified on access and during annual compliance review"
+
+  # ── Failure Handling ─────────────────────────────────────────────────────
+  on_failure:
+    severity: "critical"
+    actions:
+      - "Halt verification and preserve current state"
+      - "Alert per escalation-policy.yml CRITICAL path"
+      - "Log the failure as a security event"
+      - "Do NOT attempt automatic repair"
+      - "Initiate runbooks/audit-log-tampering.md"
+
+  # ── Reporting ────────────────────────────────────────────────────────────
+  reporting:
+    format: "json"
+    output_path: "reports/integrity-verification-{date}.json"
+    retain_reports_months: 12
+    include_in_compliance_scan: true

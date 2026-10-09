@@ -1,0 +1,74 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# PCI-DSS 4.0 Req. 10 — Self-Assessment Checklist
+# ──────────────────────────────────────────────────────────────────────────────
+# Use this checklist to verify that this repository's configurations satisfy
+# all sub-requirements of PCI-DSS Req. 10.
+#
+# This is a governance-plane subset. Infrastructure-level controls (encryption,
+# network segmentation, access control on log storage) are in
+# jolarca-infrastructure.
+# ──────────────────────────────────────────────────────────────────────────────
+
+framework: "PCI-DSS 4.0"
+requirement: "Req. 10"
+title: "Log and monitor all access to system components and cardholder data"
+version: "1.0.0"
+
+checks:
+  - id: "REQ10-01"
+    requirement: "10.1 — Audit trails are implemented and linked to individual users"
+    status: "implemented"
+    evidence:
+      - "schemas/audit-log-schema.yml — mandatory actor_id field"
+      - "logging/configs/ — all domains require actor identification"
+
+  - id: "REQ10-02"
+    requirement: "10.2 — Audit logs capture all actions by individuals"
+    status: "implemented"
+    evidence:
+      - "logging/configs/audit-log.yml — 7 mandatory event types"
+      - "logging/configs/payment-log.yml — CHD access logging"
+      - "logging/configs/kyc-aml-log.yml — identity data access logging"
+
+  - id: "REQ10-03"
+    requirement: "10.3 — Audit logs are protected from modification"
+    status: "implemented"
+    evidence:
+      - "audit-trail/integrity/hash-chain.yml — SHA-256 hash chain"
+      - "audit-trail/retention/retention-policy.yml — append-only storage"
+
+  - id: "REQ10-04"
+    requirement: "10.4 — Logs are reviewed regularly"
+    status: "implemented"
+    evidence:
+      - "alerting/rules/ — real-time automated review"
+      - "alerting/escalation-policy.yml — severity-based escalation"
+
+  - id: "REQ10-05"
+    requirement: "10.5 — Audit logs are retained and protected"
+    status: "implemented"
+    evidence:
+      - "audit-trail/retention/retention-policy.yml — 12-month retention"
+      - "audit-trail/integrity/hash-chain.yml — integrity protection"
+      - "audit-trail/backup/backup-policy.yml — daily backup"
+
+  - id: "REQ10-06"
+    requirement: "10.6 — Security incidents identified from logs"
+    status: "implemented"
+    evidence:
+      - "alerting/rules/security-alerts.yml — security event detection"
+      - "runbooks/ — incident response procedures"
+
+  - id: "REQ10-07"
+    requirement: "10.5.1 — 12 months retention, 3 immediately available"
+    status: "implemented"
+    evidence:
+      - "audit-trail/retention/retention-policy.yml — hot: 3mo, warm: 9mo"
+
+  - id: "REQ10-08"
+    requirement: "10.5.5 — File integrity monitoring on logs"
+    status: "implemented"
+    evidence:
+      - "audit-trail/integrity/hash-chain.yml — hash-chain mechanism"
+      - "scripts/verify_integrity.py — daily verification"
+      - "alerting/rules/audit-tampering-alerts.yml — tamper detection"

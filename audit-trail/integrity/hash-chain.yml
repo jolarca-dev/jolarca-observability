@@ -1,0 +1,84 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Hash-Chain Integrity Mechanism
+# ──────────────────────────────────────────────────────────────────────────────
+# Specifies the cryptographic integrity mechanism that protects audit logs
+# from undetected modification.
+#
+# PCI-DSS Req. 10.5.5: Use file-integrity monitoring or change-detection
+# software on logs to detect unauthorized modifications.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+# ── HASH-CHAIN SPECIFICATION ──────────────────────────────────────────────────
+hash_chain:
+  algorithm: "SHA-256"
+  description: >
+    Every audit-log entry includes a hash_chain field computed as:
+
+      hash_chain = SHA-256(
+        timestamp || "|" ||
+        event_id  || "|" ||
+        actor_id  || "|" ||
+        event_type || "|" ||
+        previous_hash
+      )
+
+    where previous_hash is the hash_chain of the preceding entry.
+    For the first entry in a daily batch, previous_hash is the last
+    hash of the previous day (or a genesis hash for day 1).
+
+  input_fields:
+    - "timestamp"       # ISO 8601 UTC
+    - "event_id"        # UUID v4
+    - "actor_id"        # Authenticated user identifier
+    - "event_type"      # Controlled vocabulary
+    - "previous_hash"   # SHA-256 hex digest of preceding entry
+
+  output: "hex-encoded SHA-256 digest (64 characters)"
+
+# ── GENESIS HASH ──────────────────────────────────────────────────────────────
+genesis:
+  hash: "0000000000000000000000000000000000000000000000000000000000000000"
+  description: "All-zeros genesis hash for the first entry in the chain"
+  note: >
+    The genesis hash is a constant. It marks the beginning of the chain.
+    Any change to the genesis hash would invalidate the entire chain,
+    so it is hardcoded and verified by the integrity check script.
+
+# ── VERIFICATION ──────────────────────────────────────────────────────────────
+verification:
+  frequency: "daily"
+  script: "../../scripts/verify_integrity.py"
+  scope: "all entries in hot and warm storage"
+  on_failure:
+    severity: "critical"
+    action: "alert + preserve storage + initiate runbooks/audit-log-tampering.md"
+
+  # Verification must detect:
+  detects:
+    - "modification of any log entry field"
+    - "insertion of a forged entry"
+    - "deletion of an entry (gap in the chain)"
+    - "reordering of entries"
+    - "replacement of an entry with a different version"
+
+  # Verification cannot prevent:
+  limitations:
+    - "an attacker who controls the log collector can forge entries before chaining"
+    - "defense in depth: access control on log storage is the primary control"
+    - "hash-chain is the DETECTION control, not the PREVENTION control"
+
+# ── KEY MANAGEMENT ────────────────────────────────────────────────────────────
+# The hash chain uses SHA-256 (unkeyed). No secret key is involved.
+# Integrity relies on the chain structure, not on a secret.
+# This means:
+# - An attacker who modifies an entry must recompute all subsequent hashes,
+#   which is detectable because the stored hashes no longer match.
+# - An attacker who can write to the log storage AND recompute hashes
+#   would need to modify every entry from the tampered point forward —
+#   this is detected by the verification script comparing stored vs computed.
+key_management:
+  algorithm_type: "unkeyed hash (SHA-256)"
+  note: "No key rotation needed — integrity is structural, not cryptographic-secret-based"

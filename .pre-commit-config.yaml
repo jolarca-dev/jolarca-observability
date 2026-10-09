@@ -1,0 +1,70 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# pre-commit — jolarca-observability
+# ──────────────────────────────────────────────────────────────────────────────
+# Local gate run BEFORE every commit/push (Phase 3, Step A of the pipeline).
+#
+# IMPORTANT — compensating control: server-side secret-scanning push protection
+# requires GitHub Advanced Security, which is NOT available on this private repo
+# under the org's current plan (audit finding F-02). gitleaks + detect-secrets
+# below are therefore the PRIMARY secret control, not a convenience.
+#
+# Prerequisite:  make setup        (creates .venv with the pinned toolchain)
+# Install once:  pip install pre-commit && pre-commit install --install-hooks
+# Run manually:  pre-commit run --all-files
+#
+# Hook revisions are pinned to match requirements-dev.txt / CI (verified tags).
+# ──────────────────────────────────────────────────────────────────────────────
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+
+  # Lint — matches CI `ruff check scripts/ tests/` (requirements-dev ruff==0.16.9)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.9
+    hooks:
+      - id: ruff
+
+  # Type-check — matches CI `mypy --strict scripts/ tests/` (mypy==1.15.0).
+  # Stubs are provided so the isolated hook env mirrors the CI env.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        args: ["--strict", "scripts/", "tests/"]
+        additional_dependencies:
+          - types-PyYAML==6.0.12.20260906
+          - pyyaml==6.0.2
+        pass_filenames: false
+
+  # YAML style — matches CI (requirements-dev yamllint==1.35.1)
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: ["-c", ".yamllint"]
+        files: '^(logging|alerting|audit-trail|schemas|compliance)/'
+
+  # Secret scanning — primary control in place of GHAS push protection (F-02)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: '(^\.venv/)|(^\.idea/)|(_cache/)|(^\.git/)'

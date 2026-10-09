@@ -1,0 +1,22 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# gitleaks configuration — jolarca-observability
+# ──────────────────────────────────────────────────────────────────────────────
+# gitleaks auto-loads this file from the target path (config precedence #4), so
+# both the CLI (`gitleaks detect --source .`) and the pre-commit hook
+# (`gitleaks git --pre-commit --staged`) pick it up with no extra flags.
+#
+# It EXTENDS the built-in ruleset — every default secret rule stays active — and
+# adds a single path allowlist for `.secrets.baseline`. That file stores SHA-1
+# *hashes* of known detect-secrets false positives (never plaintext), which
+# gitleaks' generic-api-key rule would otherwise flag. Allowlisting only that
+# path keeps gitleaks fully protective everywhere else.
+# ──────────────────────────────────────────────────────────────────────────────
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "detect-secrets baseline holds hashed (not plaintext) known false positives"
+paths = [
+  '''(^|/)\.secrets\.baseline$''',
+]

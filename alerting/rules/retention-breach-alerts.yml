@@ -1,0 +1,63 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Retention Breach Detection
+# ──────────────────────────────────────────────────────────────────────────────
+# Detects when audit logs are deleted, archived prematurely, or when the
+# retention policy is not being met.
+#
+# Compliance: PCI-DSS Req. 10.5.1, SOC 2 CC8.1
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+rules:
+  - id: "RETENTION_PREMATURE_DELETE"
+    name: "Audit log deleted before retention period expires"
+    severity: high
+    description: >
+      An audit log entry was deleted or made inaccessible before the
+      minimum retention period (12 months) has elapsed.
+    condition: "log_entry.deleted AND age < 12_months"
+    pci_requirement: "10.5.1"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Attempt to restore from backup"
+      - "Investigate the deletion source"
+      - "Record as a security event"
+
+  - id: "RETENTION_HOT_EXPIRED"
+    name: "Hot retention period not maintained"
+    severity: high
+    description: >
+      Logs from the last 3 months are not immediately available for
+      search/retrieval. PCI-DSS Req. 10.5.1 requires at least 3 months
+      to be immediately available.
+    condition: "hot_storage.missing_entries_for_last_3_months"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Restore from warm/cold storage if available"
+      - "Investigate why hot storage is incomplete"
+
+  - id: "BACKUP_FAILURE"
+    name: "Audit log backup failure"
+    severity: high
+    description: >
+      The scheduled backup of audit logs failed. Without current backups,
+      log recovery after a failure is not possible.
+    condition: "last_successful_backup > 25_hours"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Investigate backup system health"
+      - "Verify primary storage is still intact"
+
+  - id: "STORAGE_CAPACITY_WARNING"
+    name: "Log storage capacity approaching limit"
+    severity: medium
+    description: >
+      Log storage is above 80% capacity. If storage fills, new log
+      entries cannot be written, creating an audit gap.
+    condition: "storage_usage_percent > 80"
+    action:
+      - "Notify within 4 hours"
+      - "Plan capacity expansion"
+      - "Verify retention policy is correctly pruning expired entries"

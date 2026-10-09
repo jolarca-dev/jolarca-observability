@@ -1,0 +1,70 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Audit Log Tampering Detection — PCI-DSS Req. 10.5.5
+# ──────────────────────────────────────────────────────────────────────────────
+# Detects potential modification, deletion, or corruption of audit logs.
+# Uses hash-chain verification to detect any change to log entries.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+rules:
+  - id: "HASH_CHAIN_BREAK"
+    name: "Hash-chain integrity break detected"
+    severity: critical
+    description: >
+      The hash-chain verification found a break: the computed hash of a log
+      entry does not match the stored hash, or the previous-hash link is
+      broken. This is strong evidence of log modification.
+    condition: "verify_integrity.py detects hash mismatch"
+    pci_requirement: "10.5.5"
+    action:
+      - "Page organization owner IMMEDIATELY"
+      - "Preserve all log storage — do NOT restart or rotate"
+      - "Initiate runbooks/audit-log-tampering.md"
+      - "Assess under GDPR Art. 33 whether this is a notifiable breach"
+    investigation:
+      - "Identify the specific log entry and time range affected"
+      - "Check access logs for the log storage system"
+      - "Correlate with system access logs for the time window"
+      - "Determine if the change was authorized (backup restore, migration)"
+
+  - id: "HASH_CHAIN_MISSING"
+    name: "Log entry found without hash-chain field"
+    severity: critical
+    description: >
+      A log entry exists in storage without the required hash_chain field.
+      This indicates the entry was inserted outside the normal pipeline.
+    condition: "entry.hash_chain is null or missing"
+    action:
+      - "Quarantine the entry"
+      - "Alert per CRITICAL escalation"
+      - "Investigate the source of the unchained entry"
+
+  - id: "LOG_STORAGE_WRITE_OUTSIDE_PIPELINE"
+    name: "Write to log storage outside the collector pipeline"
+    severity: critical
+    description: >
+      A write operation to the audit-log storage was performed by a process
+      that is not the authorized log collector. This is direct evidence of
+      potential log tampering.
+    condition: "log_storage_write.source != authorized_collector"
+    action:
+      - "Block the write if possible"
+      - "Page organization owner"
+      - "Preserve forensic evidence"
+      - "Initiate incident response"
+
+  - id: "LOG_DELETION_ATTEMPT"
+    name: "Attempt to delete audit log entries"
+    severity: critical
+    description: >
+      Any attempt to delete or truncate audit log entries before the
+      retention period expires. The storage is append-only; a deletion
+      attempt is always unauthorized.
+    condition: "DELETE or TRUNCATE on audit_log storage"
+    pci_requirement: "10.5.1"
+    action:
+      - "Block the operation"
+      - "Alert per CRITICAL escalation"
+      - "Record the attempt as a security event"

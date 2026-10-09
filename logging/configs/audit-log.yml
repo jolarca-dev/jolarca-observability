@@ -1,0 +1,92 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Audit Log Configuration — PCI-DSS Req. 10.2
+# ──────────────────────────────────────────────────────────────────────────────
+# Covers: administrative access, privilege changes, authentication events,
+# configuration changes, and all actions by individuals with critical access.
+#
+# Compliance: PCI-DSS 10.2, SOC 2 CC7.1/CC8.1, ISO 27001 A.5.25, GDPR Art. 30
+# ──────────────────────────────────────────────────────────────────────────────
+
+domain: audit
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001", "gdpr"]
+
+log_sources:
+  - name: admin-console
+    description: "All actions performed through the admin console"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: critical
+
+  - name: api-gateway
+    description: "All API calls with authentication context"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: high
+
+  - name: terraform-apply
+    description: "All infrastructure changes via Terraform"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: critical
+
+  - name: github-audit
+    description: "GitHub organization audit log events"
+    transport: "webhook-stream"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: critical
+
+mandatory_events:
+  # PCI-DSS Req. 10.2.1 — all individual user access to cardholder data
+  - event_type: "chd_access"
+    description: "Any access to cardholder data environment resources"
+    pci_requirement: "10.2.1"
+
+  # PCI-DSS Req. 10.2.2 — all actions by administrators
+  - event_type: "admin_action"
+    description: "Any action performed by an administrator"
+    pci_requirement: "10.2.2"
+
+  # PCI-DSS Req. 10.2.3 — access to audit logs
+  - event_type: "audit_log_access"
+    description: "Any access to audit log storage or viewing"
+    pci_requirement: "10.2.3"
+
+  # PCI-DSS Req. 10.2.4 — invalid logical access attempts
+  - event_type: "auth_failure"
+    description: "Failed authentication attempts (login, API key, token)"
+    pci_requirement: "10.2.4"
+
+  # PCI-DSS Req. 10.2.5 — changes to identification/auth mechanisms
+  - event_type: "auth_config_change"
+    description: "Changes to authentication mechanisms (password reset, MFA change, key rotation)"
+    pci_requirement: "10.2.5"
+
+  # PCI-DSS Req. 10.2.6 — initialization/stopping/pausing of audit logs
+  - event_type: "audit_lifecycle"
+    description: "Start, stop, pause, or reconfiguration of audit logging"
+    pci_requirement: "10.2.6"
+
+  # PCI-DSS Req. 10.2.7 — creation/deletion of system-level objects
+  - event_type: "system_object_change"
+    description: "Creation or deletion of system-level objects (repos, branches, protection rules)"
+    pci_requirement: "10.2.7"
+
+retention:
+  min_months: 12          # PCI-DSS Req. 10.5.1
+  hot_months: 3           # PCI-DSS Req. 10.5.1 — immediately available
+  warm_months: 9          # Archived, 48h retrieval SLA
+
+integrity:
+  hash_chain: true        # PCI-DSS Req. 10.5.5
+  algorithm: "SHA-256"
+  verify_daily: true
+
+alerting:
+  gap_threshold_minutes: 5
+  gap_severity: critical
+  tamper_severity: critical

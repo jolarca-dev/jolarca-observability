@@ -1,0 +1,80 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# System Access Log Configuration
+# ──────────────────────────────────────────────────────────────────────────────
+# Covers: OS-level access, SSH sessions, service account usage, network access,
+# and infrastructure component events.
+#
+# Compliance: PCI-DSS 10.2, ISO 27001 A.5.25 (clock synchronisation)
+# ──────────────────────────────────────────────────────────────────────────────
+
+domain: system
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+log_sources:
+  - name: ssh-sessions
+    description: "SSH login/logout events on all system components"
+    transport: "syslog-tls"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: high
+
+  - name: service-accounts
+    description: "Service account authentication and usage events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: high
+
+  - name: network-access
+    description: "Firewall and network access control events"
+    transport: "syslog-tls"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: medium
+
+  - name: container-runtime
+    description: "Container lifecycle events (start, stop, exec, OOM)"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/audit-log-schema.yml"
+    priority: medium
+
+mandatory_events:
+  - event_type: "ssh_login"
+    description: "SSH session start (success and failure)"
+    fields_required: ["source_ip", "username", "auth_method", "session_id"]
+
+  - event_type: "ssh_logout"
+    description: "SSH session end"
+    fields_required: ["session_id", "duration_seconds", "exit_code"]
+
+  - event_type: "service_account_auth"
+    description: "Service account authentication event"
+    fields_required: ["service_account_id", "auth_method", "scope", "source_ip"]
+
+  - event_type: "network_deny"
+    description: "Network access denied by firewall or ACL"
+    fields_required: ["source_ip", "destination_ip", "destination_port", "protocol", "rule_id"]
+
+  - event_type: "container_exec"
+    description: "Command execution inside a container"
+    fields_required: ["container_id", "command", "user", "exit_code"]
+
+clock_synchronization:
+  # ISO 27001 A.5.25 — timestamps from synchronised sources
+  method: "NTP"
+  stratum_max: 3
+  max_drift_seconds: 1
+  source: "pool.ntp.org (EU servers)"
+  verify_on_each_boot: true
+
+retention:
+  min_months: 12
+  hot_months: 3
+  warm_months: 9
+
+integrity:
+  hash_chain: true
+  algorithm: "SHA-256"
+  verify_daily: true

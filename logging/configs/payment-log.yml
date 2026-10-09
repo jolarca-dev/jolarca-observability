@@ -1,0 +1,81 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Payment Log Configuration — PCI-DSS Req. 10.2 + AML Directive
+# ──────────────────────────────────────────────────────────────────────────────
+# Covers: payment initiation, authorization, settlement, refunds, chargebacks,
+# and all access to payment processing systems and cardholder data.
+#
+# Payments + KYC/AML without immutable audit logging = automatic PCI finding.
+# ──────────────────────────────────────────────────────────────────────────────
+
+domain: payment
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001", "gdpr"]
+
+log_sources:
+  - name: payment-gateway
+    description: "Payment initiation, authorization, and settlement events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/payment-log-schema.yml"
+    priority: critical
+
+  - name: payment-admin
+    description: "Administrative actions on payment configurations"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/payment-log-schema.yml"
+    priority: critical
+
+  - name: refund-processor
+    description: "Refund and chargeback processing events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/payment-log-schema.yml"
+    priority: high
+
+mandatory_events:
+  - event_type: "payment_initiated"
+    description: "A payment transaction is initiated"
+    fields_required: ["transaction_id", "merchant_id", "amount", "currency", "payment_method_type"]
+
+  - event_type: "payment_authorized"
+    description: "A payment transaction is authorized by the payment processor"
+    fields_required: ["transaction_id", "authorization_code", "risk_score"]
+
+  - event_type: "payment_settled"
+    description: "A payment transaction is settled"
+    fields_required: ["transaction_id", "settlement_id", "settled_amount"]
+
+  - event_type: "refund_initiated"
+    description: "A refund is initiated"
+    fields_required: ["transaction_id", "refund_id", "refund_amount", "reason"]
+
+  - event_type: "chargeback_received"
+    description: "A chargeback is received for a transaction"
+    fields_required: ["transaction_id", "chargeback_id", "amount", "reason_code"]
+
+  - event_type: "chd_access"
+    description: "Any access to cardholder data (viewing, processing, transmitting)"
+    pci_requirement: "10.2.1"
+    fields_required: ["actor_id", "access_type", "data_element_accessed"]
+
+  - event_type: "payment_config_change"
+    description: "Changes to payment processing configuration"
+    fields_required: ["actor_id", "config_key", "old_value_hash", "new_value_hash"]
+
+redaction:
+  pan: "mask_to_last4"       # PCI-DSS Req. 3.3
+  cvv: "never_log"           # PCI-DSS Req. 3.2 — CVV never logged, even hashed
+  pin_block: "never_log"
+  full_track_data: "never_log"
+  authentication_tokens: "never_log"
+
+retention:
+  min_months: 12
+  hot_months: 3
+  warm_months: 9
+
+integrity:
+  hash_chain: true
+  algorithm: "SHA-256"
+  verify_daily: true

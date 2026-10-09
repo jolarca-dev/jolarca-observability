@@ -1,0 +1,2 @@
+# Runtime dependencies for verification scripts
+pyyaml==6.0.2

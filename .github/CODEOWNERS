@@ -1,0 +1,27 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# CODEOWNERS — jolarca-observability
+# ──────────────────────────────────────────────────────────────────────────────
+# Compliance: SOC 2 CC8.1 (change management) · ISO 27001 A.5.3 (segregation of
+# duties) · PCI-DSS Req. 10.2 (all changes to audit-logging controls reviewed).
+#
+# Every change to this repository requires review by the owner below.
+#
+# NOTE (single-operator repository): GitHub does not count a self-approval
+# toward a *required* review, and required reviews depend on branch protection,
+# which is unavailable on a private repo under the org's current plan (audit
+# finding F-01). This file documents ownership and review routing; until branch
+# protection is enforceable, PR review is a manual, logged control.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Default owner for the entire repository
+*   @JourneyOfLife
+
+# Compliance-sensitive paths (see CONTRIBUTING.md "What Requires Extra Care").
+# Listed explicitly so review routing survives future ownership changes.
+/schemas/             @JourneyOfLife
+/logging/             @JourneyOfLife
+/alerting/            @JourneyOfLife
+/audit-trail/         @JourneyOfLife
+/compliance/          @JourneyOfLife
+/scripts/             @JourneyOfLife
+/.github/workflows/   @JourneyOfLife

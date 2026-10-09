@@ -1,0 +1,74 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Payment Log Schema — Extends Audit Log Base Schema
+# ──────────────────────────────────────────────────────────────────────────────
+# Additional mandatory fields for payment-domain log entries.
+# All fields from audit-log-schema.yml are also required.
+#
+# Compliance: PCI-DSS Req. 10.2.1 (all access to CHD)
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+schema_id: "payment-log"
+extends: "audit-log-schema.yml"
+compliance_frameworks: ["pci-dss", "soc2"]
+
+# ── ADDITIONAL MANDATORY FIELDS ───────────────────────────────────────────────
+additional_mandatory_fields:
+  transaction_id:
+    type: "string"
+    description: "Unique payment transaction identifier"
+    pci_requirement: "10.2.1 — identify the specific transaction"
+    nullable: false
+
+  merchant_id:
+    type: "string"
+    description: "Merchant account identifier"
+    nullable: false
+
+  payment_method_type:
+    type: "string"
+    enum: ["card", "bank_transfer", "digital_wallet", "other"]
+    description: "Type of payment method used"
+    nullable: false
+
+  amount_minor:
+    type: "integer"
+    description: "Amount in smallest currency unit (e.g., cents)"
+    nullable: false
+
+  currency:
+    type: "string"
+    format: "ISO 4217"
+    example: "EUR"
+    description: "Three-letter currency code"
+    nullable: false
+
+  access_type:
+    type: "string"
+    enum: ["view", "process", "transmit", "store", "delete"]
+    description: "Type of access to cardholder data (when event_type is chd_access)"
+    pci_requirement: "10.2.1 — what was done with CHD"
+    conditionally_required: "when event_type == chd_access"
+
+  data_element_accessed:
+    type: "string"
+    enum: ["pan", "expiry", "cardholder_name", "service_code", "full_track"]
+    description: "Which cardholder data element was accessed"
+    pci_requirement: "10.2.1 — which CHD element"
+    conditionally_required: "when event_type == chd_access"
+
+# ── REDACTION VERIFICATION ────────────────────────────────────────────────────
+# Before storage, payment log entries are verified to NOT contain:
+redaction_checks:
+  - field: "pan"
+    rule: "must be masked to last 4 digits or absent"
+    pci_requirement: "3.3"
+  - field: "cvv"
+    rule: "must NEVER be present"
+    pci_requirement: "3.2"
+  - field: "pin"
+    rule: "must NEVER be present"
+    pci_requirement: "3.4"
+  - field: "full_track_data"
+    rule: "must NEVER be present"
+    pci_requirement: "3.2"

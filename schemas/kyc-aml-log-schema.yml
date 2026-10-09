@@ -1,0 +1,69 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# KYC/AML Log Schema — Extends Audit Log Base Schema
+# ──────────────────────────────────────────────────────────────────────────────
+# Additional mandatory fields for KYC/AML domain log entries.
+# All fields from audit-log-schema.yml are also required.
+#
+# Compliance: PCI-DSS 10.2.1, GDPR Art. 30/32, AML Directives
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+schema_id: "kyc-aml-log"
+extends: "audit-log-schema.yml"
+compliance_frameworks: ["pci-dss", "gdpr", "iso27001"]
+
+# ── ADDITIONAL MANDATORY FIELDS ───────────────────────────────────────────────
+additional_mandatory_fields:
+  user_id:
+    type: "string"
+    description: "The user whose KYC/AML event this pertains to"
+    nullable: false
+
+  verification_method:
+    type: "string"
+    enum: ["document_verification", "biometric_match", "database_check", "manual_review", "enhanced_due_diligence"]
+    description: "Method used for identity verification"
+    conditionally_required: "when event_type involves verification"
+
+  screening_type:
+    type: "string"
+    enum: ["sanctions", "pep", "adverse_media", "combined"]
+    description: "Type of AML screening performed"
+    conditionally_required: "when event_type is aml_screening_performed"
+
+  lists_checked:
+    type: "array"
+    items: "string"
+    description: "List of sanctions/PEP/adverse media lists checked"
+    conditionally_required: "when event_type is aml_screening_performed"
+
+  result:
+    type: "string"
+    enum: ["pass", "fail", "manual_review", "match_detected", "no_match"]
+    description: "Outcome of the verification or screening"
+    nullable: false
+
+  confidence_score:
+    type: "number"
+    min: 0.0
+    max: 1.0
+    description: "Confidence score for the verification result"
+    conditionally_required: "when event_type involves verification"
+
+# ── REDACTION VERIFICATION ────────────────────────────────────────────────────
+# KYC/AML logs must NEVER contain plaintext identity data
+redaction_checks:
+  - field: "document_number"
+    rule: "must be SHA-256 hashed or absent"
+  - field: "passport_number"
+    rule: "must be SHA-256 hashed or absent"
+  - field: "national_id"
+    rule: "must be SHA-256 hashed or absent"
+  - field: "date_of_birth"
+    rule: "must be age range only, not exact date"
+  - field: "full_address"
+    rule: "must be country only, not full address"
+  - field: "biometric_data"
+    rule: "must NEVER be present"
+  - field: "document_image"
+    rule: "must NEVER be present"

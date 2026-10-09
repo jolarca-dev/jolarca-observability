@@ -1,0 +1,75 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Security Event Alerting Rules
+# ──────────────────────────────────────────────────────────────────────────────
+# General security event alerting: authentication failures, privilege
+# escalation, unauthorized access, and suspicious patterns.
+#
+# Compliance: PCI-DSS Req. 10.2.4, 10.6, SOC 2 CC7.1, ISO 27001 A.5.25
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+rules:
+  - id: "PRIVILEGE_ESCALATION"
+    name: "Privilege escalation detected"
+    severity: critical
+    description: >
+      A user's access level was elevated without a corresponding approved
+      change record. May indicate compromised credentials or insider threat.
+    condition: "user.role_changed AND change NOT IN approved_changes"
+    action:
+      - "Page organization owner immediately"
+      - "Consider reverting the privilege change"
+      - "Investigate the source of the change"
+
+  - id: "ROOT_ACCESS_USED"
+    name: "Root/admin access used on system component"
+    severity: high
+    description: >
+      Root or administrator access was used on any system component in
+      the cardholder-data environment.
+    condition: "access.user IN [root, admin] AND target IN cde_systems"
+    pci_requirement: "10.2.2"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Verify the access was authorized"
+      - "Record in audit trail"
+
+  - id: "SHARED_ACCOUNT_DETECTED"
+    name: "Possible shared account usage"
+    severity: high
+    description: >
+      An account is used from multiple source IPs within a short time
+      window, suggesting the credentials may be shared (PCI-DSS Req. 8.2
+      requires unique IDs).
+    condition: "unique_source_ips_per_actor > 2 IN 3600s"
+    pci_requirement: "8.2"
+    action:
+      - "Notify within 1 hour"
+      - "Verify the account holder"
+      - "Consider forcing password reset"
+
+  - id: "KYC_DECISION_OVERRIDE"
+    name: "KYC decision manually overridden"
+    severity: high
+    description: >
+      A KYC verification decision was manually overridden. This is a
+      compliance-sensitive event that may indicate fraud facilitation.
+    condition: "event_type == kyc_decision_override"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Verify the override was authorized and documented"
+      - "Flag for compliance review"
+
+  - id: "SAR_FILED"
+    name: "Suspicious activity report filed"
+    severity: high
+    description: >
+      A suspicious activity report was filed. This is a regulatory
+      obligation with strict confidentiality requirements.
+    condition: "event_type == suspicious_activity_reported"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Ensure SAR confidentiality is maintained"
+      - "Verify filing with the appropriate authority"

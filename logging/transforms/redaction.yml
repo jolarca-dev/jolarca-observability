@@ -1,0 +1,108 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Log Redaction Transforms
+# ──────────────────────────────────────────────────────────────────────────────
+# Ensures that Restricted-classification data (PAN, PII, credentials) never
+# appears in log output. Applied by the log collector before storage.
+#
+# Compliance: PCI-DSS Req. 3.2/3.3, GDPR Art. 5(1)(f), Art. 32
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "gdpr", "iso27001"]
+
+# ── REDACTION RULES ───────────────────────────────────────────────────────────
+# Each rule identifies a data class, the redaction method, and the compliance
+# requirement that mandates it.
+
+redaction_rules:
+  # ── Payment Card Data (PCI-DSS Req. 3) ───────────────────────────────────
+  - id: "PAN_MASK"
+    data_class: "primary_account_number"
+    method: "mask_to_last4"
+    description: "Mask PAN to first 6 / last 4 digits per PCI-DSS Req. 3.3"
+    pci_requirement: "3.3"
+    pattern: "\\b(?:\\d[ -]*?){13,19}\\b"
+    replacement: "****-****-****-{last4}"
+
+  - id: "CVV_NEVER"
+    data_class: "card_verification_value"
+    method: "remove_entirely"
+    description: "CVV/CVC must NEVER appear in logs under any circumstances"
+    pci_requirement: "3.2"
+    pattern: "\\b\\d{3,4}\\b"
+    context_fields: ["cvv", "cvc", "cvv2", "cvc2"]
+
+  - id: "PIN_NEVER"
+    data_class: "personal_identification_number"
+    method: "remove_entirely"
+    description: "PIN blocks must never appear in logs"
+    pci_requirement: "3.4"
+
+  - id: "TRACK_DATA_NEVER"
+    data_class: "full_track_data"
+    method: "remove_entirely"
+    description: "Full magnetic stripe / track data must never be logged"
+    pci_requirement: "3.2"
+
+  # ── Authentication Credentials ───────────────────────────────────────────
+  - id: "AUTH_TOKEN_NEVER"
+    data_class: "authentication_token"
+    method: "remove_entirely"
+    description: "Session tokens, API keys, passwords — never log even partial"
+    fields: ["authorization", "x-api-key", "cookie", "set-cookie", "token", "password", "secret"]
+
+  - id: "GITHUB_TOKEN_NEVER"
+    data_class: "github_token"
+    method: "remove_entirely"
+    description: "GitHub PATs and installation tokens"
+    pattern: "(gh[pousr]|github_pat)_[A-Za-z0-9_]+"
+
+  # ── KYC/Identity Data (GDPR Art. 5, Art. 32) ────────────────────────────
+  - id: "KYC_DOC_HASH"
+    data_class: "identity_document_number"
+    method: "sha256_hash"
+    description: "Identity document numbers hashed; original never logged"
+    fields: ["passport_number", "national_id", "drivers_license"]
+
+  - id: "DOB_AGE_RANGE"
+    data_class: "date_of_birth"
+    method: "replace_with_age_range"
+    description: "Replace exact DOB with age range (e.g., '25-34')"
+    fields: ["date_of_birth", "dob", "birth_date"]
+
+  - id: "ADDRESS_COUNTRY_ONLY"
+    data_class: "postal_address"
+    method: "extract_country"
+    description: "Log only the country from a full address"
+    fields: ["address", "street", "city", "postal_code"]
+
+  - id: "PHONE_COUNTRY_ONLY"
+    data_class: "phone_number"
+    method: "extract_country_code"
+    description: "Log only the country calling code"
+    fields: ["phone", "mobile", "telephone"]
+
+  - id: "BIOMETRIC_NEVER"
+    data_class: "biometric_data"
+    method: "remove_entirely"
+    description: "Biometric data (facial, fingerprint) must never be logged"
+    fields: ["biometric_template", "face_scan", "fingerprint"]
+
+  # ── General PII ──────────────────────────────────────────────────────────
+  - id: "EMAIL_MASK"
+    data_class: "email_address"
+    method: "mask_local_part"
+    description: "Mask email local part: j***@example.com"
+    fields: ["email", "email_address"]
+
+  - id: "IP_ADDRESS_KEEP"
+    data_class: "ip_address"
+    method: "keep"
+    description: "IP addresses are logged for security purposes (legitimate interest)"
+    note: "Required for PCI-DSS Req. 10.2 and security incident investigation"
+
+# ── VERIFICATION ──────────────────────────────────────────────────────────────
+# After redaction, the log entry is validated:
+# 1. No field matches a redaction pattern in its unredacted form
+# 2. PAN check-digit validation on any remaining numeric sequences
+# 3. Entries that fail redaction validation are quarantined, not stored

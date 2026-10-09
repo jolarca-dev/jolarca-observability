@@ -1,0 +1,95 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Audit Trail Retention Policy
+# ──────────────────────────────────────────────────────────────────────────────
+# Defines how long audit logs are retained per domain and per tier.
+#
+# PCI-DSS Req. 10.5.1: retain audit log history for at least 12 months,
+# with at least the most recent 3 months immediately available.
+#
+# AML directives may require longer retention (5+ years) for KYC-related
+# logs — check local jurisdiction requirements.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "gdpr", "iso27001"]
+
+# ── GLOBAL MINIMUMS ───────────────────────────────────────────────────────────
+# These apply to ALL log domains. Per-domain policies may extend but never
+# shorten these minimums.
+
+global_minimums:
+  total_retention_months: 12     # PCI-DSS Req. 10.5.1
+  immediately_available_months: 3  # PCI-DSS Req. 10.5.1
+  backup_retention_months: 13    # At least 1 month beyond total retention
+
+# ── STORAGE TIERS ─────────────────────────────────────────────────────────────
+storage_tiers:
+  hot:
+    description: "Immediately available for search and retrieval"
+    retention_months: 3
+    retrieval_latency: "real-time"
+    storage_type: "encrypted block storage"
+    pci_requirement: "10.5.1 — 3 months immediately available"
+
+  warm:
+    description: "Archived but retrievable within 48 hours"
+    retention_months: 9
+    retrieval_latency: "48 hours"
+    storage_type: "encrypted object storage (IA tier)"
+    note: "Covers months 4–12 of the 12-month retention requirement"
+
+  cold:
+    description: "Long-term archive for compliance and legal hold"
+    retention_months: 60
+    retrieval_latency: "5 business days"
+    storage_type: "encrypted archive storage"
+    note: "Exceeds PCI-DSS minimum; supports AML 5-year retention"
+
+# ── PER-DOMAIN RETENTION ──────────────────────────────────────────────────────
+domain_retention:
+  audit:
+    hot_months: 3
+    warm_months: 9
+    cold_months: 60
+    note: "Administrative and privileged access — full 12-month PCI retention"
+
+  payment:
+    hot_months: 3
+    warm_months: 9
+    cold_months: 84
+    note: "Payment events — 7 years for payment card brand requirements"
+
+  kyc_aml:
+    hot_months: 3
+    warm_months: 9
+    cold_months: 84
+    note: "KYC/AML events — 5+ years per AML directives, 7 years for best practice"
+
+  application:
+    hot_months: 3
+    warm_months: 9
+    cold_months: 24
+    note: "Application events — 2 years for operational troubleshooting"
+
+  system:
+    hot_months: 3
+    warm_months: 9
+    cold_months: 24
+    note: "System access — 2 years for infrastructure forensics"
+
+# ── RETENTION ENFORCEMENT ─────────────────────────────────────────────────────
+enforcement:
+  auto_delete_after_retention: false
+  note: >
+    Logs are NEVER automatically deleted. Retention expiry triggers a review:
+    the org owner must explicitly approve deletion. This prevents accidental
+    loss of logs that may be needed for ongoing investigations or legal holds.
+  legal_hold_override: true
+  note_legal_hold: >
+    A legal hold freezes retention for the specified log range. No deletion
+    is permitted while a legal hold is active, regardless of retention expiry.
+  deletion_must_be_logged: true
+  note_deletion: >
+    Every deletion of audit logs (after retention expiry, with approval) is
+    itself logged as an audit event with: who approved, what was deleted,
+    the retention period that had elapsed, and the legal-hold check result.

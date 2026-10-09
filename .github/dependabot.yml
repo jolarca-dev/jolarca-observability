@@ -1,0 +1,46 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Dependabot — jolarca-observability
+# ──────────────────────────────────────────────────────────────────────────────
+# Weekly grouped update PRs for Python deps and GitHub Actions.
+# Dependabot alerts are free for private repos; enable "Dependabot alerts" and
+# "Dependabot security updates" in Settings → Code security (audit finding F-12).
+# Actions are SHA-pinned in ci.yml — Dependabot still tracks and bumps the SHAs.
+# ──────────────────────────────────────────────────────────────────────────────
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

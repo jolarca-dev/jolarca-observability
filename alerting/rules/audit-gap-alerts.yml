@@ -1,0 +1,55 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Audit Log Gap Detection — PCI-DSS Req. 10.5.5
+# ──────────────────────────────────────────────────────────────────────────────
+# Detects gaps in the audit log stream that may indicate logging failure or
+# deliberate log suppression. A gap in audit logging is a gap in compliance.
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "iso27001"]
+
+rules:
+  - id: "AUDIT_GAP_5MIN"
+    name: "Audit log gap exceeds 5 minutes"
+    severity: critical
+    description: >
+      No audit-log entries received for any domain in the last 5 minutes.
+      This may indicate the logging pipeline has failed, a system component
+      has stopped emitting events, or an attacker has suppressed logging.
+    condition: "time_since_last_audit_entry > 300s"
+    scope: "all log domains"
+    pci_requirement: "10.5.5"
+    action:
+      - "Page organization owner immediately"
+      - "Check log collector health"
+      - "Verify all log sources are connected"
+      - "If gap confirmed: initiate runbooks/audit-log-gap.md"
+    false_positive_handling: >
+      Expected during planned maintenance windows. Maintenance must be
+      pre-registered with a silence window (max 4 hours per silence_policy).
+
+  - id: "AUDIT_GAP_PER_DOMAIN"
+    name: "Domain-specific audit log gap"
+    severity: high
+    description: >
+      No entries from a specific log domain (audit, payment, kyc-aml) for
+      10 minutes while other domains continue to emit events.
+    condition: "time_since_last_entry_per_domain > 600s AND other_domains_active"
+    scope: "per domain"
+    action:
+      - "Notify organization owner within 1 hour"
+      - "Check domain-specific log source health"
+      - "Verify the application component is running"
+
+  - id: "AUDIT_VOLUME_ANOMALY"
+    name: "Audit log volume anomaly"
+    severity: medium
+    description: >
+      Audit log volume deviates more than 80% from the 7-day rolling average
+      for the same time-of-day window. May indicate selective logging failure
+      or unusual activity.
+    condition: "abs(current_volume - rolling_avg) / rolling_avg > 0.8"
+    scope: "all log domains, per-hour window"
+    action:
+      - "Review in next 4-hour window"
+      - "Compare with deployment/change logs for correlation"

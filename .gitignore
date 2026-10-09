@@ -1,0 +1,34 @@
+# ── Required patterns (policy/repo-defaults.yml data_handling) ──────────────
+*.pem
+*.key
+*.p12
+secrets.json
+credentials.json
+.env
+.env.*
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# ── IDE ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

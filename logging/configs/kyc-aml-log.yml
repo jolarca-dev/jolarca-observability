@@ -1,0 +1,94 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# KYC/AML Log Configuration — AML Directives + GDPR Art. 30/32
+# ──────────────────────────────────────────────────────────────────────────────
+# Covers: identity verification events, KYC document processing, AML screening,
+# sanctions checks, PEP screening, suspicious activity detection.
+#
+# KYC/AML identity data is high-risk personal data (potentially Art. 9 special
+# category). Logging must capture the audit trail without logging the sensitive
+# data itself.
+# ──────────────────────────────────────────────────────────────────────────────
+
+domain: kyc-aml
+version: "1.0.0"
+compliance_frameworks: ["pci-dss", "soc2", "gdpr", "iso27001"]
+
+log_sources:
+  - name: identity-verification
+    description: "KYC identity document submission and verification events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/kyc-aml-log-schema.yml"
+    priority: critical
+
+  - name: aml-screening
+    description: "AML sanctions, PEP, and adverse media screening events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/kyc-aml-log-schema.yml"
+    priority: critical
+
+  - name: kyc-admin
+    description: "Administrative actions on KYC/AML configurations and decisions"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/kyc-aml-log-schema.yml"
+    priority: critical
+
+  - name: suspicious-activity
+    description: "Suspicious activity detection and reporting events"
+    transport: "structured-json"
+    format: "json"
+    schema_ref: "../schemas/kyc-aml-log-schema.yml"
+    priority: critical
+
+mandatory_events:
+  - event_type: "identity_document_submitted"
+    description: "A user submits an identity document for KYC verification"
+    fields_required: ["user_id", "document_type", "document_number_hash", "issuing_country"]
+
+  - event_type: "identity_verification_result"
+    description: "KYC verification result (pass/fail/manual-review)"
+    fields_required: ["user_id", "result", "verification_method", "confidence_score"]
+
+  - event_type: "aml_screening_performed"
+    description: "AML screening performed against sanctions/PEP/adverse media lists"
+    fields_required: ["user_id", "screening_type", "lists_checked", "result"]
+
+  - event_type: "sanctions_match_detected"
+    description: "A potential sanctions match is detected"
+    fields_required: ["user_id", "list_name", "match_score", "matched_entry_ref"]
+
+  - event_type: "suspicious_activity_reported"
+    description: "A suspicious activity report (SAR) is filed"
+    fields_required: ["user_id", "report_id", "report_type", "filing_authority"]
+
+  - event_type: "kyc_decision_override"
+    description: "A KYC decision is manually overridden"
+    fields_required: ["user_id", "original_decision", "override_decision", "override_reason", "override_actor_id"]
+
+  - event_type: "identity_data_access"
+    description: "Any access to stored identity/KYC data"
+    fields_required: ["actor_id", "user_id_referenced", "access_type", "data_category"]
+
+redaction:
+  # KYC identity data must never appear in logs in plaintext
+  document_number: "sha256_hash"
+  passport_number: "sha256_hash"
+  national_id: "sha256_hash"
+  date_of_birth: "age_range_only"      # Log age range, not exact DOB
+  full_address: "country_only"         # Log country, not full address
+  phone_number: "country_code_only"
+  biometric_data: "never_log"
+  document_images: "never_log"
+
+retention:
+  min_months: 12          # PCI-DSS Req. 10.5.1 + AML record-keeping
+  hot_months: 3
+  warm_months: 9
+  note: "AML directives may require longer retention (5+ years) — check local jurisdiction"
+
+integrity:
+  hash_chain: true
+  algorithm: "SHA-256"
+  verify_daily: true

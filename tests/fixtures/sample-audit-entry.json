@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-09-26T14:30:00.000Z",
+  "event_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "event_type": "admin_action",
+  "actor_id": "user:jol-12345",
+  "actor_type": "admin",
+  "source_ip": "203.0.113.42",
+  "domain": "audit",
+  "severity": "info",
+  "description": "Repository branch protection rule updated",
+  "hash_chain": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "target_resource": "github:jolarca-dev/jolarca/branches/main/protection",
+  "action": "update",
+  "result": "success"
+}

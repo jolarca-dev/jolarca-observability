@@ -1,0 +1,57 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Compliance Scan — jolarca-observability
+# ──────────────────────────────────────────────────────────────────────────────
+# Runs verification scripts on every PR and weekly schedule.
+# Managed by jolarca-control governance.
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: compliance-scan
+
+on:
+  pull_request:
+    paths:
+      - 'logging/**'
+      - 'alerting/**'
+      - 'audit-trail/**'
+      - 'schemas/**'
+      - 'scripts/**'
+  schedule:
+    - cron: '23 3 * * 1'  # Weekly Monday 03:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-retention:
+    name: "Verify Retention Policy"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/verify_retention.py
+
+  verify-integrity:
+    name: "Verify Hash-Chain Integrity"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/verify_integrity.py
+
+  verify-completeness:
+    name: "Verify Log Schema Completeness"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/verify_completeness.py
