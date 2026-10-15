@@ -11,8 +11,8 @@ KYC/AML identity documents.
 
 | Severity | CVSS v3.1 | Response Time | Channel |
 |----------|-----------|---------------|---------|
-| Critical | 9.0–10.0 | 24 hours | `security@jolarca.dev` |
-| High | 7.0–8.9 | 72 hours | `security@jolarca.dev` |
+| Critical | 9.0–10.0 | 24 hours | `journey4oflife+jolarca.security@gmail.com` (interim) |
+| High | 7.0–8.9 | 72 hours | `journey4oflife+jolarca.security@gmail.com` (interim) |
 | Medium | 4.0–6.9 | 7 days | GitHub Security Advisory |
 | Low | 0.1–3.9 | 30 days | GitHub Security Advisory |
 
