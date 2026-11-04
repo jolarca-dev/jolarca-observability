@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
       - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.12.16"
       - run: pip install -r requirements-dev.txt
       - run: ruff check scripts/ tests/
       - run: mypy --strict scripts/ tests/
@@ -36,6 +36,6 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
       - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.12.16"
       - run: pip install -r requirements.txt -r requirements-dev.txt
       - run: pytest tests/ -v --tb=short
