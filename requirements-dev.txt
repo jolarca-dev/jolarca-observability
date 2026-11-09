@@ -1,7 +1,7 @@
 # Development dependencies — lint, type-check, test
 -r requirements.txt
-ruff==0.16.9
-mypy==1.15.0
-types-PyYAML==6.0.12.20260906
-pytest==8.3.4
-yamllint==1.35.1
+ruff==0.17.4
+mypy==2.4.1
+types-PyYAML==6.0.12.20261103
+pytest==9.2.0
+yamllint==1.38.0
